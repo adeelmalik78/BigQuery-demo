@@ -1,0 +1,46 @@
+##########           LIQUIBASE FLOWFILE                ##########
+##########  learn more http://docs.liquibase.com/flow  ##########
+
+# setup DATETIME on Linux as: 
+#   export DATETIME=`date "+%Y-%m-%d_%H:%M"`
+
+# globalVariables:
+#   DIRNAME: "./${FLOWVARS.PROJNAME}_${FLOWVARS.THISDATE}"
+#   STATUSFILE: "status.txt"
+#   UPDATELOG: "update.log"
+#   HISTORYFILE: "history.txt"
+  # TAG: ${DATETIME}
+
+stages:
+  run-checks:
+    actions:
+      - type: liquibase
+        command: checks run
+        cmdArgs: { checks-scope: "changelog" }
+
+  update-info:
+    actions:
+      - type: liquibase
+        command: flow
+        cmdArgs: { flow-file: "flows/generate-update-info.yaml" }
+
+  tag-and-update:
+    actions:
+      - type: liquibase
+        command: tag
+        cmdArgs: { tag: "${DATETIME}" }
+        
+      - type: liquibase
+        command: update
+
+## The endStage ALWAYS RUNS. 
+## So put actions here which you desire to perform whether previous stages' actions succeed or fail.
+## If you do not want any actions to ALWAYS RUN, simply delete the endStage from your flow file.
+
+endStage:
+  actions:
+    - type: liquibase
+      command: rollback-one-update
+      cmdArgs: { force: "true" }
+    - type: liquibase
+      command: history
